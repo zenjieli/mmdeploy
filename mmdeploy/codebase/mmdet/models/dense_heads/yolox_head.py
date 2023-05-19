@@ -93,10 +93,11 @@ def yolox_head__predict_by_feat(self,
     flatten_priors = torch.cat(mlvl_priors)
     bboxes = self._bbox_decode(flatten_priors, flatten_bbox_preds)
     # directly multiply score factor and feed to nms
+    # See https://github.com/open-mmlab/mmdeploy/issues/2006
     scores = cls_scores * (score_factor.unsqueeze(-1))
-    max_scores, _ = torch.max(scores, 1)
+    max_scores, _ = torch.max(scores, -1)
     mask = max_scores >= cfg.score_thr
-    scores = scores.where(mask, scores.new_zeros(1))
+    scores = scores.where(mask.unsqueeze(-1), scores.new_zeros(1))
 
     if not with_nms:
         return bboxes, scores
